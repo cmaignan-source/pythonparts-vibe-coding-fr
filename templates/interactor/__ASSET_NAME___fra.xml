@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Element>
+    <StringTable>Allplan PythonParts string table</StringTable>
+
+    <!-- Script Title -->
+    <Item>
+        <TextId>1001</TextId>
+        <Text>__ASSET_TITLE_FR__</Text>
+    </Item>
+
+    <!-- Global Page -->
+    <Item>
+        <TextId>2001</TextId>
+        <Text>Global</Text>
+    </Item>
+
+ </Element>

@@ -1,0 +1,7 @@
+docs/
+*.code-workspace
+__pycache__/
+*.pyc
+.pytest_cache/
+.vscode/*
+!.vscode/mcp.json

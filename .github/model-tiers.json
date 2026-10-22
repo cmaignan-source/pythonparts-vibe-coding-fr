@@ -1,0 +1,29 @@
+{
+  "_comment": "Seul fichier a editer quand les modeles changent. Puis : python tools/sync_models.py. 'overrides' = bascule temporaire par tache (vider a la fin).",
+  "tiers": {
+    "light": [
+      "Claude Haiku 5.5"
+    ],
+    "medium": [
+      "Claude Sonnet 5.5"
+    ],
+    "heavy": [
+      "Claude Opus 5.5",
+      "Claude Sonnet 5.5"
+    ]
+  },
+  "agents": {
+    "pp-orchestrateur": "heavy",
+    "pp-palette": "light",
+    "pp-geo-calcul": "medium",
+    "pp-script": "medium",
+    "pp-relecteur": "medium",
+    "pp-eclaireur": "light"
+  },
+  "overrides": {},
+  "available": [
+    "Claude Haiku 5.5",
+    "Claude Opus 5.5",
+    "Claude Sonnet 5.5"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "servers": {
+    "pythonparts-knowledge-mcp": {
+     "url": "https://pythonparts-mcp.allplan.com/2027/mcp",
+     "type": "http"
+    },
+    "pythonparts-local-mcp": {
+		"type": "stdio",
+		"command": "uvx",
+		"args": [
+			"--index", "https://test.pypi.org/simple",
+			"--index-strategy", "unsafe-best-match",
+			"pythonparts-mcp",
+			"--allplan-version", "2027",
+			"--std-path", "C:\\Data\\Allplan\\Allplan 2027\\Std",
+			"--usr-path", "C:\\Users\\cmaignan\\Documents\\Nemetschek\\Allplan\\2027\\Usr\\Local"
+		],
+		"env": {
+			"UV_SYSTEM_CERTS": "true"
+		}
+	}
+  }
+}
