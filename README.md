@@ -31,18 +31,49 @@ tools/
 docs/                      # créé à l'usage, un dossier par part (non partagé)
 ```
 
+## Prérequis
+
+- PC Windows avec ALLPLAN 2027 installé et démarré.
+- Visual Studio Code (version à jour) avec GitHub Copilot activé. D'autres agents compatibles MCP (Claude Code, Cursor) fonctionnent aussi, mais la syntaxe de configuration diffère.
+- `uv` : l'outil qui télécharge et lance le serveur local. À installer une fois dans PowerShell, puis redémarrer VS Code pour qu'il prenne en compte le nouveau PATH :
+  ```
+  winget install astral-sh.uv
+  ```
+- Un compte [ALLPLAN Connect](https://connect2.allplan.com/) actif (nécessaire au serveur de connaissances).
+- Python 3.10 ou plus avec `pytest` sur le Python système, pour `check_part.py` (il n'a pas besoin du framework ALLPLAN).
+
+### Trouver vos chemins Std et Usr
+
+Dans ALLPLAN, ouvrez Allmenu > Service > File Explorer :
+
+| Chemin | Entrée Allmenu | Exemple |
+|---|---|---|
+| Std | Office standard (STD) | `C:\Data\Allplan\Allplan 2027\Std` |
+| Usr | My own CAD documents (USR) | `C:\Users\<utilisateur>\Documents\Nemetschek\Allplan\2027\Usr\Local` |
+
+Ces deux chemins servent à `--std-path` et `--usr-path` dans `.vscode/mcp.json`, et au paramètre `std_path` / `usr_path` du plugin officiel.
+
 ## Installation
 
 1. Copiez ces dossiers à la racine de votre dossier de travail (dans nos exemples `C:\Data\Allplan\PythonPartsDev`).
    Gardez l'arborescence : les agents utilisent des chemins relatifs à cette racine.
-2. Ouvrez le dossier dans VS Code comme dossier de workspace nommé `Pilotage`, avec les dossiers ALLPLAN (framework, Std, exemples) en plus.
+2. Dans votre fichier `.code-workspace`, déclarez la racine comme premier dossier, avec le nom `Pilotage` (les agents et les règles s'y réfèrent) :
+   ```json
+   "folders": [
+       {
+           "name": "Pilotage",
+           "path": "C:\\Data\\Allplan\\PythonPartsDev",
+           "//": ".github/agents, .vscode/mcp.json, ..."
+       }
+   ]
+   ```
 3. Dans les paramètres du workspace, vérifiez :
    - `chat.agentFilesLocations` : `{ ".github/agents": true }` ;
    - l'interpréteur Python d'ALLPLAN, les chemins `python.analysis.*` et `pylint.args`, qui contiennent des chemins propres à chaque poste.
-4. `.vscode/mcp.json` : adaptez `--std-path` et `--usr-path` à votre installation. Le serveur de connaissances est commun.
-5. Python 3.10 ou plus avec `pytest` sur le Python système (utilisé par `check_part.py`, qui n'a pas besoin du framework ALLPLAN).
-6. Dans `.github/copilot-instructions.md`, corrigez le chemin de la racine si le vôtre diffère.
-7. Vérifiez la cohérence :
+5. `.vscode/mcp.json` : adaptez `--std-path` et `--usr-path` à votre installation. Le serveur de connaissances est commun.
+6. Python 3.10 ou plus avec `pytest` sur le Python système (utilisé par `check_part.py`, qui n'a pas besoin du framework ALLPLAN).
+7. Dans `.github/copilot-instructions.md`, corrigez le chemin de la racine si le vôtre diffère.
+8. Vérifiez la cohérence :
    ```
    python tools/sync_models.py --check
    ```
