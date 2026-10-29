@@ -8,9 +8,7 @@
 		"type": "stdio",
 		"command": "uvx",
 		"args": [
-			"--index", "https://test.pypi.org/simple",
-			"--index-strategy", "unsafe-best-match",
-			"pythonparts-mcp",
+			"pythonparts-mcp@latest",
 			"--allplan-version", "2027",
 			"--std-path", "C:\\Data\\Allplan\\Allplan 2027\\Std",
 			"--usr-path", "C:\\Users\\cmaignan\\Documents\\Nemetschek\\Allplan\\2027\\Usr\\Local"
