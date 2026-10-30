@@ -30,6 +30,9 @@ noms palette ↔ `build_ele`, UUID, CRLF. Tu reprends le résultat tel quel.
    visibilités conditionnelles cohérentes.
 5. **Qualité** : docstrings anglais, annotations publiques, `create_preview` léger, PEP 8, séparation en quatre blocs.
 6. **Template** : respect du squelette local retenu en §2.
+7. **Vues du PythonPart** (bloquant) : défaut `ModelEleList(common_props=...)` + `append_geometry_3d` + `PythonPartUtil(common_props=...).add_pythonpart_view_2d3d`
+   (visible plan et 3D). `add_pythonpart_view_3d` seul = bloquant (invisible en plan). Vues 2D/3D distinctes admises seulement
+   si le brief §8a exprime une représentation symbolique en plan différente d'une vue 3D réaliste.
 
 ## Mode DIAGNOSTIC (l'utilisateur colle un traceback)
 Exige le message exact + contexte (action, valeurs de paramètres). Classe : palette / calcul / conversion / API / environnement.

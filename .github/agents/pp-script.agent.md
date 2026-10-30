@@ -36,6 +36,11 @@ Imports locaux relatifs. Paquet tiers : `list_site_packages` d'abord.
 `from __future__ import annotations` ; annotations complètes ; docstrings et commentaires en anglais ; noms explicites ;
 `create_preview` (interactor) léger ; pas d'`except` muet ; pas d'effet de bord au chargement.
 
+## Vues du PythonPart
+Par défaut `ModelEleList(common_props=...)` + `append_geometry_3d(<objets>)` puis `PythonPartUtil(common_props=...).add_pythonpart_view_2d3d(model_ele_list)` :
+visible dans toutes les projections (plan, 3D). `add_pythonpart_view_3d` seul est interdit (invisible en vue en plan).
+Vues 2D et 3D distinctes uniquement si le brief §8a exprime une représentation symbolique en plan différente d'une vue 3D réaliste.
+
 ## Fin
 `typecheck_file` sur chaque `.py` modifié (zéro erreur) ; ligne au Journal §9 ; réponse ≤ 10 lignes
 (statut, fichiers, chemin d'`api.md`). Ne modifie jamais un module de calcul ni le `.pyp`.
