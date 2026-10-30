@@ -2,6 +2,11 @@
 """Deterministic checks for a PythonPart batch (no LLM tokens needed).
 
 Usage: python tools/check_part.py <package_dir> <pyp_file> [--template scriptobject|interactor] [--docs <docs_part_dir>]
+       [--assembly <file.py,file.py>]   extra assembly files (comma-separated) added to __init__.py, main.py
+       [--allplan-version <value>] [--python-version <value>]   copied as-is into the check.md "Environment" line
+         (read them with get_allplan_info / get_python_env_info; never guessed here, a missing one is a warning)
+Checks that <Script><Name> in the .pyp is relative to PythonPartsScripts (no PythonPartsScripts prefix, no absolute path)
+and resolves to an existing file next to the package directory.
 Writes <docs>/reports/check.md and pytest.txt, prints a short summary, exits 1 on blocking issues.
 """
 from __future__ import annotations
@@ -98,7 +103,7 @@ def check_python(path: Path, is_assembly: bool, siblings: set[str], report: Repo
     return tree
 
 
-def pyp_parameters(pyp: Path, report: Report) -> set[str]:
+def pyp_parameters(pyp: Path, report: Report) -> tuple[set[str], ET.Element | None]:
     raw = pyp.read_bytes()
     if raw.startswith(b"\xef\xbb\xbf"):
         report.block(pyp.name, "UTF-8 BOM at start of .pyp (breaks ElementTree: 'invalid token line 1 column 1')")
@@ -108,7 +113,7 @@ def pyp_parameters(pyp: Path, report: Report) -> set[str]:
         root = ET.fromstring(raw)
     except ET.ParseError as error:
         report.block(pyp.name, f"invalid XML: {error}")
-        return set()
+        return set(), None
     uuid_node = next((n for n in root.iter() if n.tag.lower() == "uuid"), None)
     if uuid_node is None or not (uuid_node.text or "").strip():
         report.block(pyp.name, "empty or missing <Uuid>")
@@ -116,8 +121,44 @@ def pyp_parameters(pyp: Path, report: Report) -> set[str]:
     for parameter in root.iter("Parameter"):
         name_node = parameter.find("Name")
         if name_node is not None and (name_node.text or "").strip():
-            names.add(name_node.text.strip())
-    return names
+            names.add((name_node.text or "").strip())
+    return names, root
+
+
+def check_script_path(pyp: Path, root: ET.Element | None, package: Path, report: Report) -> None:
+    """Check that <Script><Name> is relative to PythonPartsScripts and points to an existing file."""
+    if root is None:
+        return
+    script_node = next((n for n in root.iter() if n.tag.lower() == "script"), None)
+    name_node = None if script_node is None else next((n for n in script_node if n.tag.lower() == "name"), None)
+    script_name = (name_node.text or "").strip() if name_node is not None else ""
+    if not script_name:
+        report.block(pyp.name, "empty or missing <Script><Name>")
+        return
+    normalized = script_name.replace("\\", "/")
+    segments = [segment for segment in normalized.split("/") if segment]
+    if normalized.startswith("/") or re.match(r"[A-Za-z]:", normalized):
+        report.block(pyp.name, f"<Script><Name> `{script_name}` is absolute or starts with a separator (must be relative to PythonPartsScripts)")
+        return
+    if segments and segments[0].lower() == "pythonpartsscripts":
+        report.block(pyp.name, f"<Script><Name> `{script_name}` starts with PythonPartsScripts (ALLPLAN already resolves from that folder)")
+        return
+    package_name = package.resolve().name
+    if not (package.resolve().parent / Path(*segments)).is_file():
+        report.block(pyp.name, f"<Script><Name> `{script_name}` not found relative to the package parent folder (expected e.g. `{package_name}\\__init__.py`)")
+    if segments[-1] != "__init__.py" or len(segments) < 2 or segments[-2] != package_name:
+        report.warn(pyp.name, f"<Script><Name> `{script_name}` does not end with `{package_name}\\__init__.py`")
+
+
+def check_versions(allplan_version: str | None, python_version: str | None, report: Report) -> str:
+    """Return the "Environment" line and warn for each version that was not provided."""
+    not_provided = "not provided (to be read via get_allplan_info / get_python_env_info)"
+    for option, value in (("--allplan-version", allplan_version), ("--python-version", python_version)):
+        if not (value or "").strip():
+            report.warn(option, "version not provided: read it via get_allplan_info / get_python_env_info and pass it to check_part")
+    allplan_text = (allplan_version or "").strip() or not_provided
+    python_text = (python_version or "").strip() or not_provided
+    return f"Environment: ALLPLAN {allplan_text} | Python {python_text}"
 
 
 def main() -> int:
@@ -126,7 +167,12 @@ def main() -> int:
     parser.add_argument("pyp_file", type=Path)
     parser.add_argument("--template", choices=ENTRY_POINTS, default="scriptobject")
     parser.add_argument("--docs", type=Path, default=None)
+    parser.add_argument("--assembly", default="",
+                        help="comma-separated extra assembly file names (extends ASSEMBLY_FILES for this run)")
+    parser.add_argument("--allplan-version", default=None, help="ALLPLAN version, as returned by get_allplan_info")
+    parser.add_argument("--python-version", default=None, help="embedded Python version, as returned by get_python_env_info")
     args = parser.parse_args()
+    assembly_files = ASSEMBLY_FILES | {name.strip() for name in args.assembly.split(",") if name.strip()}
 
     package = args.package_dir
     docs = args.docs or Path(__file__).resolve().parents[1] / "docs" / package.name
@@ -138,7 +184,7 @@ def main() -> int:
     used_parameters: set[str] = set()
     entry_defs: set[str] = set()
     for path in sources:
-        is_assembly = path.name in ASSEMBLY_FILES
+        is_assembly = path.name in assembly_files
         tree = check_python(path, is_assembly, siblings, report)
         if tree and is_assembly:
             text = path.read_text(encoding="utf-8")
@@ -164,7 +210,8 @@ def main() -> int:
             for found in placeholder.findall(line):
                 report.block(f"{path.name}:{line_number}", f"unreplaced template placeholder {found}")
 
-    declared = pyp_parameters(args.pyp_file, report)
+    declared, pyp_root = pyp_parameters(args.pyp_file, report)
+    check_script_path(args.pyp_file, pyp_root, package, report)
     for name in sorted(used_parameters - declared):
         report.block(args.pyp_file.name, f"build_ele.{name} not declared in .pyp (case-sensitive)")
     for name in sorted(declared - used_parameters):
@@ -183,8 +230,9 @@ def main() -> int:
     else:
         (docs / "reports" / "pytest.txt").write_text("no tests directory\n", encoding="utf-8")
 
+    environment_line = check_versions(args.allplan_version, args.python_version, report)
     header = "| Id | Location | Finding |\n|---|---|---|\n"
-    lines = [f"# check_part — {package.name}", "", f"Blocking: {len(report.blocking)} | Warnings: {len(report.warnings)}", ""]
+    lines = [f"# check_part — {package.name}", "", environment_line, "", f"Blocking: {len(report.blocking)} | Warnings: {len(report.warnings)}", ""]
     lines += ["## Blocking", header + "\n".join(report.blocking or ["| - | - | none |"]), ""]
     lines += ["## Warnings", header + "\n".join(report.warnings or ["| - | - | none |"]), ""]
     (docs / "reports" / "check.md").write_text("\n".join(lines), encoding="utf-8")
