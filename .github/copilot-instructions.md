@@ -29,6 +29,7 @@ Les agents échangent des **chemins**, jamais du contenu. `docs/<part>/` : `brie
 8. Code/docstrings/commentaires en anglais ; pas de noms courts (`x, res, tmp, obj, val, data`).
 9. Unités : mm ; radians dans le calcul, degrés dans la palette, conversion unique dans `pp-script`.
 10. Statut final : « typechecké, vérifié par introspection et prêt à tester dans ALLPLAN ».
+11. Vues : `add_pythonpart_view_2d3d` par défaut ; `add_pythonpart_view_3d` seul interdit (invisible en plan) ; 2D/3D distinctes seulement si brief §8a.
 
 ## Modèles
 Source unique : `.github/model-tiers.json` (niveaux `light` / `medium` / `heavy`, `overrides` temporaires).
